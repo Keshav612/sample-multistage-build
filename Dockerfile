@@ -1,30 +1,16 @@
-FROM golang:1.12.0-alpine3.9 as builder
+FROM golang:alpine3.9 as Builder
 
 RUN apk add git
 
 # Add Maintainer Info
 LABEL maintainer="<Keshav Mishra>"
 
-RUN mkdir /app
-ADD . /app
-WORKDIR /app
+WORKDIR /helloworld
+COPY helloworld.go .
+RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o helloworld .
 
-COPY helloworld.go ./
-RUN go mod download
-
-COPY . .
-
-# Build the Go app
-RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o main .
-
-# GO Repo base repo
 FROM alpine:latest
+WORKDIR /root
 
-RUN apk --no-cache add ca-certificates curl
-
-RUN mkdir /app
-
-WORKDIR /app/
-
-# Copy the Pre-built binary file from the previous stage
-COPY --from=builder /app/main .
+COPY --from=Builder /helloworld/helloworld .
+CMD ["./helloworld"] 
